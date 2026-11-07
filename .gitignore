@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+*.tgz
+.pi/
+.env
+.env.*
+!.env.example
+/.npmrc
+/auth.json
+/models-store.json

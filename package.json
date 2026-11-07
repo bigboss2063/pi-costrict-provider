@@ -1,0 +1,53 @@
+{
+  "name": "pi-costrict-provider",
+  "version": "0.1.0",
+  "description": "Native CoStrict provider for Pi with browser login and dynamic model discovery.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bigboss2063/pi-costrict-provider.git"
+  },
+  "homepage": "https://github.com/bigboss2063/pi-costrict-provider#readme",
+  "bugs": {
+    "url": "https://github.com/bigboss2063/pi-costrict-provider/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "pi-package",
+    "costrict"
+  ],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "prepublishOnly": "npm run check"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.5.0",
+    "@earendil-works/pi-coding-agent": "1.5.0",
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.0"
+  }
+}
