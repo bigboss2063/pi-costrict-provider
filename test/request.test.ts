@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { adaptPayload } from "../src/request.ts";
+import { adaptPayload, isSummarizationContext, isSummarizationPayload } from "../src/request.ts";
 import { parseModels } from "../src/provider.ts";
 
 test("models use service metadata, conservative missing limits and unknown pricing", () => {
@@ -52,4 +52,30 @@ test("only function tools and base64 image URLs are accepted", () => {
   const payload = { messages: [{ content: [{ type: "image_url", image_url: { url: "data:image/png;base64,AAAA" } }] }] };
   assert.deepEqual(adaptPayload(payload, "glm"), payload);
   assert.throws(() => adaptPayload(null, "glm"), /object/);
+});
+
+test("summarization requests are detected and drop thinking controls", () => {
+  const summary = {
+    stream: true,
+    reasoning_effort: "high",
+    reasoning: { effort: "high" },
+    enable_thinking: true,
+    messages: [{
+      role: "system",
+      content: "You are a context summarization assistant. Your task is to read a conversation.",
+    }, {
+      role: "user",
+      content: "<conversation>\nhi\n</conversation>\n\nSummarize.",
+    }],
+  };
+  assert.equal(isSummarizationPayload(summary), true);
+  assert.equal(isSummarizationContext({ systemPrompt: summary.messages[0].content }), true);
+  assert.equal(isSummarizationContext({ systemPrompt: "You are a test assistant." }), false);
+  const adapted = adaptPayload(summary, "kimi-test") as Record<string, unknown>;
+  assert.equal(adapted.reasoning_effort, undefined);
+  assert.equal(adapted.reasoning, undefined);
+  assert.equal(adapted.enable_thinking, undefined);
+  assert.equal(adapted.stream, true);
+  const normal = adaptPayload({ stream: true, reasoning_effort: "high", messages: [{ role: "user", content: "hi" }] }, "kimi-test") as any;
+  assert.equal(normal.reasoning_effort, "high");
 });

@@ -1,6 +1,6 @@
 {
   "name": "pi-costrict-provider",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Native CoStrict provider for Pi with browser login and dynamic model discovery.",
   "type": "module",
   "license": "MIT",

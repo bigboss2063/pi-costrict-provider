@@ -131,6 +131,27 @@ test("truncated streams produce an error instead of silent success", async (t) =
   assert.ok(result.errorMessage);
 });
 
+test("compaction-style summaries tolerate streams that omit finish_reason", async (t) => {
+  const run = await runtime(t, (_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/event-stream" });
+    res.write('data: {"choices":[{"index":0,"delta":{"content":"## Goal\\nShip the fix"},"finish_reason":null}]}\n\n');
+    res.end("data: [DONE]\n\n");
+  });
+  const summaryContext = {
+    systemPrompt: "You are a context summarization assistant. Your task is to read a conversation between a user and an AI assistant, then produce a structured summary following the exact format specified.\n\nDo NOT continue the conversation. Do NOT respond to any questions in the conversation. ONLY output the structured summary.",
+    messages: [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: "<conversation>\nuser: hi\nassistant: hello\n</conversation>\n\nSummarize." }],
+      timestamp: Date.now(),
+    }],
+  };
+  const result = await run.models.completeSimple(run.model, summaryContext, { maxRetries: 0, reasoning: "high" });
+  assert.equal(result.stopReason, "stop");
+  assert.deepEqual(result.content, [{ type: "text", text: "## Goal\nShip the fix" }]);
+  const body = run.requests.find((r) => r.body)!.body;
+  assert.equal(body.reasoning_effort, undefined);
+});
+
 for (const status of [401, 429, 400]) {
   test(`preserves HTTP ${status} failure semantics`, async (t) => {
     const run = await runtime(t, (_req, res) => json(res, {

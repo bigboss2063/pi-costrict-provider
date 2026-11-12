@@ -1,5 +1,34 @@
 import { isRecord } from "./auth.ts";
 
+const SUMMARIZATION_MARKER = "context summarization assistant";
+
+function messageText(message: Record<string, unknown>): string {
+  if (typeof message.content === "string") return message.content;
+  if (!Array.isArray(message.content)) return "";
+  return message.content
+    .map((block) => (isRecord(block) && typeof block.text === "string" ? block.text : ""))
+    .join("");
+}
+
+/** Pi /compact and branch summaries use a dedicated system prompt and wrap history in tags. */
+export function isSummarizationPayload(payload: Record<string, unknown>): boolean {
+  if (!Array.isArray(payload.messages)) return false;
+  for (const message of payload.messages) {
+    if (!isRecord(message)) continue;
+    const text = messageText(message);
+    if (text.includes(SUMMARIZATION_MARKER)) return true;
+    if (text.includes("<conversation>") && text.includes("</conversation>")) return true;
+  }
+  return false;
+}
+
+export function isSummarizationContext(context: { systemPrompt?: string; messages?: unknown[] }): boolean {
+  if (typeof context.systemPrompt === "string" && context.systemPrompt.includes(SUMMARIZATION_MARKER)) {
+    return true;
+  }
+  return isSummarizationPayload({ messages: context.messages });
+}
+
 // Only model-specific differences observed by costrict-router are applied here.
 export function adaptPayload(payload: unknown, modelId: string): unknown {
   if (!isRecord(payload)) throw new Error("CoStrict: chat payload must be an object");
@@ -29,6 +58,15 @@ export function adaptPayload(payload: unknown, modelId: string): unknown {
         }
       }
     }
+  }
+  // One-shot summaries (/compact, branch summary) do not need client-requested thinking.
+  // Leaving reasoning_effort on these requests makes CoStrict's long silent thinking windows
+  // more likely, which Pi surfaces as "Stream ended without finish_reason".
+  // Do not inject thinking.type=disabled: some CoStrict models reject that with HTTP 400.
+  if (isSummarizationPayload(result)) {
+    delete result.reasoning_effort;
+    delete result.reasoning;
+    delete result.enable_thinking;
   }
   return result;
 }
