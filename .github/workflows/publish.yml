@@ -13,6 +13,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Required so Environment secrets (Settings → Environments → NPM_TOKEN) are available.
+    # Repository secrets named NPM_TOKEN also work without an environment, but this repo
+    # stores the token as an environment secret.
+    environment: NPM_TOKEN
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

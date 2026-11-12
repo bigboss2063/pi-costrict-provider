@@ -137,8 +137,8 @@ npm publish --dry-run
 一次性准备：
 
 1. 在 [npm Access Tokens](https://www.npmjs.com/settings/~/tokens) 创建 **Automation** token（不要用会要求 OTP 的 publish token）。
-2. 仓库 Settings → Secrets and variables → Actions → New repository secret：名称 `NPM_TOKEN`，值为该 token。
-3. （可选）在 npm 包设置里为 GitHub Actions 开启 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)，与 `--provenance`  provenance 声明配合使用。
+2. 把 token 放进名为 `NPM_TOKEN` 的 **Environment** secret（Settings → Environments → `NPM_TOKEN` → Environment secrets → `NPM_TOKEN`）。Publish 工作流已绑定该 environment；只加 Repository secret 而不同时配置 environment 时，CI 读不到。
+3. （可选）在 npm 包设置里为 GitHub Actions 开启 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)，与 `--provenance` provenance 声明配合使用。
 
 发版流程（版本号已写入 `package.json` 并合并到 `main` 后）：
 
