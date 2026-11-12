@@ -13,6 +13,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: NPM_TOKEN
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

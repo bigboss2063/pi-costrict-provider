@@ -125,33 +125,7 @@ npm pack --dry-run
 npm publish --dry-run
 ```
 
-`npm publish --dry-run` 只演练发布，不上传包。`prepublishOnly` 会在演练和正式发布前运行类型检查及测试；`publishConfig` 指定发布到 npm 官方仓库，并使用公开访问权限。
-
-### 用 GitHub Actions 发布
-
-仓库已配置：
-
-- `CI`：`main` 与 PR 上运行 `npm run check`
-- `Publish`：推送 `v*` 标签时发布到 npm；也可在 Actions 里手动 `workflow_dispatch`
-
-一次性准备：
-
-1. 在 [npm Access Tokens](https://www.npmjs.com/settings/~/tokens) 创建 **Automation** token（不要用会要求 OTP 的 publish token）。
-2. 仓库 Settings → Secrets and variables → Actions → New repository secret：名称 `NPM_TOKEN`，值为该 token。
-3. （可选）在 npm 包设置里为 GitHub Actions 开启 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)，与 `--provenance`  provenance 声明配合使用。
-
-发版流程（版本号已写入 `package.json` 并合并到 `main` 后）：
-
-```sh
-git checkout main
-git pull
-# 确认 package.json 的 version，例如 0.1.1
-git tag -a v0.1.1 -m "v0.1.1"
-git push origin v0.1.1
-```
-
-标签名去掉 `v` 后必须与 `package.json` 的 `version` 一致，否则 Publish 工作流会失败。  
-若标签已推送、只是后来才加上工作流，可到 Actions → Publish → Run workflow，对当前 `main` 手动发布一次。
+`npm publish --dry-run` 只演练发布，不上传包。`prepublishOnly` 会在演练和正式发布前运行类型检查及测试；`publishConfig` 指定发布到 npm 官方仓库，并使用公开访问权限。正式发版走仓库里的 GitHub Actions（推送 `v*` 标签或手动跑 Publish）。
 
 使用 Node 内置测试框架，无需真实账号。测试覆盖登录和取消、Token 轮换、请求头、模型缓存与账号隔离、连续工具调用、思考内容回传、图片、usage、异常流、HTTP 错误和 Pi 包加载。
 
