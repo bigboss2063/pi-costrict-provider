@@ -1,14 +1,26 @@
-import { createProvider, type Model, type Provider, type Credential, type ProviderRequestOptions } from "@earendil-works/pi-ai";
+import { createProvider, type Model, type Provider, type Credential, type ProviderRequestOptions, type Context } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/compat";
 import { createHash } from "node:crypto";
 import {
   costrictHeaders, isRecord, login, normalizeBaseUrl, readCredential, refresh, requestJson,
   type CostrictCredential, type CostrictOptions,
 } from "./auth.ts";
-import { adaptPayload } from "./request.ts";
+import { adaptPayload, isSummarizationContext } from "./request.ts";
 
 type ChatModel = Model<"openai-completions">;
 const CATALOG_TTL = 10 * 60_000;
+
+/** Compaction/branch summaries are one-shot text replies; tolerate CoStrict streams that omit finish_reason. */
+function modelForContext(model: Model<"openai-completions">, context: Context): Model<"openai-completions"> {
+  if (!isSummarizationContext(context)) return model;
+  return {
+    ...model,
+    compat: {
+      ...model.compat,
+      supportsFinishReason: false,
+    },
+  };
+}
 
 function positiveInteger(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : fallback;
@@ -92,8 +104,10 @@ export function createCostrictProvider(options: CostrictOptions = {}): Provider<
     },
     models: [],
     api: {
-      stream: (model, context, streamOptions) => api.stream(model, context, requestOptions(streamOptions, model.id)),
-      streamSimple: (model, context, streamOptions) => api.streamSimple(model, context, requestOptions(streamOptions, model.id)),
+      stream: (model, context, streamOptions) =>
+        api.stream(modelForContext(model as ChatModel, context), context, requestOptions(streamOptions, model.id)),
+      streamSimple: (model, context, streamOptions) =>
+        api.streamSimple(modelForContext(model as ChatModel, context), context, requestOptions(streamOptions, model.id)),
     },
     filterModels: (catalog, value) => {
       const credential = oauthCredential(value);
